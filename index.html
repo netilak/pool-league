@@ -327,7 +327,7 @@ select{padding:6px 10px;border:1px solid #ddd;border-radius:8px;font-size:13px;f
 const ADMIN_USERNAME = 'admin';
 const ADMIN_PASSWORD = 'admin1234';
 const GUEST_CODE     = 'TNCC';
-const WORKER_URL     = 'https://pool-league-worker.xxx.workers.dev'; // ← ใส่ URL Worker ของคุณ
+const WORKER_URL     = 'https://pool-league-worker.netilak-duangviset.workers.dev'; // ← ใส่ URL Worker ของคุณ
 // ─────────────────────────────────────────────────
 
 const AVBG=['#B5D4F4','#9FE1CB','#FAC775','#F4C0D1','#C0DD97','#F5C4B3','#CECBF6','#D3D1C7','#F7C1C1'];
@@ -601,19 +601,19 @@ async function confirmMatch(id){
 }
 function calcStats(s){
   const st={};
-  s.players.forEach((p,i)=>{const bg=p.isTeam?TBGC[i%8]:AVBG[i%9],fg=p.isTeam?TFGC[i%8]:AVFG[i%9];st[p.id]={p,name:p.name,avHtml:`<div class="av" style="width:22px;height:22px;font-size:9px;background:${bg};color:${fg}">${ci(p.name)}</div>`,w:0,l:0,pts:0,gf:0,ga:0,played:0};});
+  s.players.forEach((p,i)=>{const bg=p.isTeam?TBGC[i%8]:AVBG[i%9],fg=p.isTeam?TFGC[i%8]:AVFG[i%9];st[p.id]={p,name:p.name,avHtml:`<div class="av" style="width:22px;height:22px;font-size:9px;background:${bg};color:${fg}">${ci(p.name)}</div>`,w:0,l:0,gf:0,ga:0,played:0};});
   s.matches.filter(m=>m.done).forEach(m=>{if(!st[m.p1]||!st[m.p2])return;const s1=parseInt(m.s1)||0,s2=parseInt(m.s2)||0;
-    st[m.p1].gf+=s1;st[m.p1].ga+=s2;st[m.p1].pts+=s1;st[m.p1].played++;
-    st[m.p2].gf+=s2;st[m.p2].ga+=s1;st[m.p2].pts+=s2;st[m.p2].played++;
+    st[m.p1].gf+=s1;st[m.p1].ga+=s2;st[m.p1].played++;
+    st[m.p2].gf+=s2;st[m.p2].ga+=s1;st[m.p2].played++;
     if(s1>s2){st[m.p1].w++;}else if(s2>s1){st[m.p2].w++;}else{st[m.p1].l++;st[m.p2].l++;}
   });
-  return Object.values(st).sort((a,b)=>b.pts-a.pts||b.w-a.w||(b.gf-b.ga)-(a.gf-a.ga));
+  return Object.values(st).map(x=>({...x,pts:x.gf})).sort((a,b)=>b.pts-a.pts||b.w-a.w||(b.gf-b.ga)-(a.gf-a.ga));
 }
 function renderStandings(){
   const s=cs();if(!s)return;
   const sorted=calcStats(s);const done=s.matches.filter(m=>m.done).length;
   document.getElementById('standChips').innerHTML=`<div class="info-chip">${s.mode==='team'?'ทีม':'เดี่ยว'} · Round Robin</div><div class="info-chip">แมตช์เสร็จ <b>${done}/${s.matches.length}</b></div>`;
-  document.getElementById('standTable').innerHTML=`<table class="tbl"><thead><tr><th class="c">#</th><th>${s.mode==='team'?'ทีม':'ชื่อ'}</th><th class="c">แข่ง</th><th class="c">ชนะ</th><th class="c">แพ้</th><th class="c">แต้มสะสม</th></tr></thead><tbody>${sorted.map((st,i)=>{const rk=i===0?'rk1':i===1?'rk2':i===2?'rk3':'rkn';const wp=st.played?Math.round(st.w/st.played*100):0;return`<tr><td class="c"><span class="rk ${rk}">${i+1}</span></td><td><div style="display:flex;align-items:center;gap:8px">${st.avHtml}<div><div style="font-weight:600">${st.name}</div>${st.p.isTeam?`<div style="font-size:10px;color:#888">${st.p.members.join(', ')}</div>`:`<div style="font-size:10px;color:#888">win ${wp}%</div>`}</div></div></td><td class="c">${st.played}</td><td class="c win-c" style="font-weight:600">${st.w}</td><td class="c lose-c">${st.l}</td><td class="c" style="font-weight:600;font-size:15px;color:#0c447c">${st.pts}</td></tr>`;}).join('')}</tbody></table>`;
+  document.getElementById('standTable').innerHTML=`<table class="tbl"><thead><tr><th class="c">#</th><th>${s.mode==='team'?'ทีม':'ชื่อ'}</th><th class="c">P</th><th class="c">W</th><th class="c">L</th><th class="c">GW</th><th class="c">GL</th><th class="c">GD</th><th class="c">Pts</th></tr></thead><tbody>${sorted.map((st,i)=>{const rk=i===0?'rk1':i===1?'rk2':i===2?'rk3':'rkn';const gd=st.gf-st.ga;return`<tr><td class="c"><span class="rk ${rk}">${i+1}</span></td><td><div style="display:flex;align-items:center;gap:8px">${st.avHtml}<div><div style="font-weight:600">${st.name}</div>${st.p.isTeam?`<div style="font-size:10px;color:#888">${st.p.members.join(', ')}</div>`:''}</div></div></td><td class="c">${st.played}</td><td class="c win-c" style="font-weight:600">${st.w}</td><td class="c lose-c">${st.l}</td><td class="c">${st.gf}</td><td class="c">${st.ga}</td><td class="c" style="color:${gd>=0?'#3b6d11':'#a32d2d'}">${gd>0?'+':''}${gd}</td><td class="c" style="font-weight:700;font-size:16px;color:#0c447c">${st.pts}</td></tr>`;}).join('')}</tbody></table>`;
 }
 function renderStats(){
   const s=cs();if(!s)return;
