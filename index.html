@@ -631,7 +631,8 @@ function calcStats(s){
   s.matches.filter(m=>m.done).forEach(m=>{if(!st[m.p1]||!st[m.p2])return;const s1=parseInt(m.s1)||0,s2=parseInt(m.s2)||0;
     st[m.p1].gf+=s1;st[m.p1].ga+=s2;st[m.p1].played++;
     st[m.p2].gf+=s2;st[m.p2].ga+=s1;st[m.p2].played++;
-    if(s1>s2){st[m.p1].w++;}else if(s2>s1){st[m.p2].w++;}else{st[m.p1].l++;st[m.p2].l++;}
+    if(s1>s2){st[m.p1].w++;st[m.p2].l++;}
+    else if(s2>s1){st[m.p2].w++;st[m.p1].l++;}
   });
   return Object.values(st).map(x=>({...x,pts:x.gf})).sort((a,b)=>b.pts-a.pts||b.w-a.w||(b.gf-b.ga)-(a.gf-a.ga));
 }
