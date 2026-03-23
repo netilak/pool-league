@@ -634,7 +634,7 @@ function calcStats(s){
     if(s1>s2){st[m.p1].w++;st[m.p2].l++;}
     else if(s2>s1){st[m.p2].w++;st[m.p1].l++;}
   });
-  return Object.values(st).map(x=>({...x,pts:x.gf})).sort((a,b)=>b.pts-a.pts||b.w-a.w||(b.gf-b.ga)-(a.gf-a.ga));
+  return Object.values(st).map(x=>({...x,pts:x.gf})).sort((a,b)=>b.pts-a.pts||(b.gf-b.ga)-(a.gf-a.ga)||b.w-a.w);
 }
 function renderStandings(){
   const s=cs();if(!s)return;
