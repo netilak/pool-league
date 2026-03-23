@@ -327,7 +327,7 @@ select{padding:6px 10px;border:1px solid #ddd;border-radius:8px;font-size:13px;f
 const ADMIN_USERNAME = 'admin';
 const ADMIN_PASSWORD = 'admin1234';
 const GUEST_CODE     = 'TNCC';
-const WORKER_URL = 'https://pool-league-worker.netilak-duangviset.workers.dev'; // ← ใส่ URL Worker ของคุณ
+const WORKER_URL     = 'https://pool-league-worker.netilak-duangviset.workers.dev'; // ← ใส่ URL Worker ของคุณ
 // ─────────────────────────────────────────────────
 
 const AVBG=['#B5D4F4','#9FE1CB','#FAC775','#F4C0D1','#C0DD97','#F5C4B3','#CECBF6','#D3D1C7','#F7C1C1'];
@@ -563,7 +563,8 @@ async function endSeason(){
 function renderSchedule(){
   const s=cs();if(!s)return;
   const fp=document.getElementById('filterPlayer');const prev=fp.value;
-  fp.innerHTML='<option value="">ผู้เล่นทั้งหมด</option>'+s.players.map(p=>`<option value="${p.id}">${p.name}</option>`).join('');
+  const allLabel=s.mode==='team'?'ทีมทั้งหมด':'ผู้เล่นทั้งหมด';
+  fp.innerHTML=`<option value="">${allLabel}</option>`+s.players.map(p=>`<option value="${p.id}">${p.name}</option>`).join('');
   if(prev)fp.value=prev;
   const fPid=parseInt(fp.value)||0,fSt=document.getElementById('filterStatus').value;
   let vis=s.matches;
@@ -640,9 +641,12 @@ function ci(n){return(n||'?').split(' ').map(w=>w[0]).join('').toUpperCase().sli
 function avEl(name,idx,sz=28,fsz=11){const bg=AVBG[idx%9],fg=AVFG[idx%9];return`<div class="av" style="width:${sz}px;height:${sz}px;font-size:${fsz}px;background:${bg};color:${fg}">${ci(name)}</div>`;}
 function tavEl(name,idx,sz=28,fsz=11){return`<div class="av" style="width:${sz}px;height:${sz}px;font-size:${fsz}px;background:${TBGC[idx%8]};color:${TFGC[idx%8]}">${ci(name)}</div>`;}
 function genMatches(ps){
-  const arr=[...ps];if(arr.length%2)arr.push(null);
-  const n=arr.length,half=n/2;let rot=arr.slice(1),mid=1,res=[];
-  for(let r=0;r<n-1;r++){const circle=[arr[0],...rot];for(let i=0;i<half;i++){const a=circle[i],b=circle[n-1-i];if(a&&b)res.push({id:mid++,round:r+1,p1:a.id,p2:b.id,s1:'',s2:'',done:false});}rot=[rot[rot.length-1],...rot.slice(0,-1)];}
+  const res=[];let mid=1;
+  for(let i=0;i<ps.length;i++){
+    for(let j=i+1;j<ps.length;j++){
+      res.push({id:mid++,p1:ps[i].id,p2:ps[j].id,s1:'',s2:'',done:false});
+    }
+  }
   return res;
 }
 
