@@ -1,0 +1,842 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Pool League</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,-apple-system,sans-serif;background:#f5f5f5;color:#1a1a1a;min-height:100vh}
+.page{display:none}.page.active{display:block}
+
+/* LOGIN */
+.login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:1rem}
+.login-box{background:#fff;border:1px solid #e5e5e5;border-radius:16px;padding:2rem;width:100%;max-width:360px}
+.login-logo{font-size:32px;text-align:center;margin-bottom:8px}
+.login-title{font-size:20px;font-weight:600;text-align:center;margin-bottom:4px}
+.login-sub{font-size:13px;color:#888;text-align:center;margin-bottom:20px}
+.login-tabs{display:grid;grid-template-columns:1fr 1fr;background:#f5f5f5;border-radius:10px;padding:3px;margin-bottom:20px;gap:3px}
+.login-tab{padding:8px;font-size:13px;font-weight:500;border:none;background:none;cursor:pointer;border-radius:8px;color:#888;font-family:inherit;transition:all .15s}
+.login-tab.active{background:#fff;color:#1a1a1a;box-shadow:0 1px 3px rgba(0,0,0,.1)}
+.form-group{margin-bottom:14px}
+.form-group label{display:block;font-size:12px;font-weight:500;color:#555;margin-bottom:5px}
+.form-group input{width:100%;padding:9px 12px;border:1px solid #ddd;border-radius:8px;font-size:14px;font-family:inherit;outline:none;transition:border-color .15s}
+.form-group input:focus{border-color:#1a1a1a}
+.form-group input.input-err{border-color:#e74c3c;animation:shake .3s ease}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+.login-err{font-size:12px;color:#c0392b;margin-bottom:10px;min-height:18px;display:flex;align-items:center;gap:5px}
+.login-err:not(:empty)::before{content:"";width:4px;height:4px;border-radius:50%;background:#c0392b;flex-shrink:0}
+.btn-login{width:100%;padding:10px;background:#1a1a1a;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:500;cursor:pointer;font-family:inherit}
+.btn-login:hover{opacity:.85}
+.guest-hint{font-size:11px;color:#aaa;text-align:center;margin-top:10px}
+/* APP SHELL */
+.app-wrap{max-width:900px;margin:0 auto;padding:1rem}
+.app-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem;flex-wrap:wrap;gap:10px}
+.app-title{font-size:20px;font-weight:600}
+.app-header-right{display:flex;align-items:center;gap:10px}
+.user-chip{font-size:12px;color:#666;background:#f0f0f0;padding:4px 10px;border-radius:999px}
+.role-chip{font-size:10px;font-weight:600;padding:3px 8px;border-radius:999px}
+.role-admin{background:#faeeda;color:#854f0b}
+.role-viewer{background:#e6f1fb;color:#0c447c}
+
+/* BUTTONS */
+.btn{padding:7px 14px;border-radius:8px;border:1px solid #ddd;background:#fff;color:#1a1a1a;font-size:13px;cursor:pointer;font-family:inherit}
+.btn:hover{background:#f5f5f5}
+.btn-primary{background:#1a1a1a;color:#fff;border-color:#1a1a1a}
+.btn-primary:hover{opacity:.85}
+.btn-sm{padding:4px 10px;font-size:12px}
+.btn-danger{border-color:#f0b0b0;color:#c0392b}
+.btn-danger:hover{background:#fff5f5}
+.btn-logout{font-size:12px;color:#888;background:none;border:none;cursor:pointer;font-family:inherit}
+.btn-logout:hover{color:#1a1a1a}
+.btn-guest{width:100%;padding:10px;background:#fff;color:#666;border:1px solid #ddd;border-radius:8px;font-size:14px;cursor:pointer;font-family:inherit}
+.btn-guest:hover{background:#f9f9f9;border-color:#aaa}
+
+/* TABS */
+.tabs{display:flex;gap:2px;border-bottom:1px solid #e5e5e5;margin-bottom:1.25rem;overflow-x:auto}
+.tab{padding:8px 14px;font-size:13px;cursor:pointer;border:none;background:none;color:#888;border-bottom:2px solid transparent;margin-bottom:-1px;font-family:inherit;white-space:nowrap}
+.tab.active{color:#1a1a1a;border-bottom-color:#1a1a1a;font-weight:500}
+.sec{display:none}.sec.active{display:block}
+
+/* CARDS */
+.card{background:#fff;border:1px solid #e5e5e5;border-radius:12px;margin-bottom:1rem}
+.card-body{padding:14px 16px}
+.season-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px;margin-bottom:1.5rem}
+.season-card{background:#fff;border:1px solid #e5e5e5;border-radius:12px;padding:14px 16px;cursor:pointer;transition:border-color .15s}
+.season-card:hover{border-color:#aaa}
+.season-card.is-active{border:2px solid #1a1a1a}
+.new-card{border:1px dashed #ccc;display:flex;align-items:center;justify-content:center;gap:8px;font-size:14px;color:#888;min-height:90px;cursor:pointer;border-radius:12px}
+.new-card:hover{background:#f9f9f9;color:#1a1a1a}
+
+/* BADGES */
+.badge{display:inline-block;font-size:10px;font-weight:600;padding:2px 8px;border-radius:999px}
+.b-active{background:#eaf3de;color:#3b6d11}
+.b-ended{background:#f1efe8;color:#5f5e5a}
+.b-done{background:#eaf3de;color:#3b6d11}
+.b-pend{background:#f1efe8;color:#5f5e5a}
+.mode-solo{background:#e6f1fb;color:#0c447c}
+.mode-team{background:#eaf3de;color:#27500a}
+
+/* PLAYERS */
+.chip-wrap{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:7px;margin-bottom:10px}
+.p-chip{display:flex;align-items:center;gap:7px;background:#f9f9f9;border:1px solid #e5e5e5;border-radius:8px;padding:7px 10px}
+.av{border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:600;flex-shrink:0}
+.p-name{font-size:12px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.p-sub{font-size:10px;color:#888}
+.rm{margin-left:auto;background:none;border:none;cursor:pointer;color:#aaa;font-size:14px;padding:0 2px;line-height:1}
+.rm:hover{color:#c0392b}
+
+/* MATCH CARDS */
+.match-list{display:flex;flex-direction:column;gap:8px}
+.match-card{background:#fff;border:1px solid #e5e5e5;border-radius:12px;padding:12px 14px;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:8px}
+.player-col{display:flex;align-items:center;gap:7px}
+.player-col.right{flex-direction:row-reverse}
+.pname{font-size:13px;font-weight:500}
+.psub{font-size:10px;color:#888}
+.mid-col{display:flex;flex-direction:column;align-items:center;gap:5px}
+.score-row{display:flex;align-items:center;gap:4px}
+.si{width:34px;text-align:center;padding:5px 2px;border-radius:6px;border:1px solid #ddd;background:#fff;color:#1a1a1a;font-size:13px;font-family:inherit;font-weight:500}
+.si:disabled{background:#f5f5f5;color:#aaa}
+.colon{font-size:12px;color:#aaa}
+.save-btn{padding:3px 10px;font-size:11px;border-radius:8px;border:1px solid #ddd;background:#fff;color:#1a1a1a;cursor:pointer;font-family:inherit}
+.save-btn:hover{background:#f5f5f5}
+
+/* TABLES */
+.tbl{width:100%;border-collapse:collapse;font-size:13px}
+.tbl th{text-align:left;padding:8px 12px;color:#888;font-weight:500;border-bottom:1px solid #e5e5e5;white-space:nowrap}
+.tbl td{padding:8px 12px;border-bottom:1px solid #e5e5e5;vertical-align:middle}
+.tbl tr:last-child td{border-bottom:none}
+.tbl tr:hover td{background:#fafafa}
+.tbl .c{text-align:center}
+.rk{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;font-size:11px;font-weight:600}
+.rk1{background:#fac775;color:#633806}.rk2{background:#d3d1c7;color:#2c2c2a}.rk3{background:#f5c4b3;color:#712b13}.rkn{background:#f0f0f0;color:#888}
+.win-c{color:#3b6d11}.lose-c{color:#a32d2d}
+
+/* STATS */
+.stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(88px,1fr));gap:8px;margin-bottom:1rem}
+.stat-card{background:#f9f9f9;border-radius:8px;padding:10px 12px}
+.stat-label{font-size:11px;color:#888;margin-bottom:4px}
+.stat-val{font-size:20px;font-weight:600}
+.profile-hdr{display:flex;align-items:center;gap:14px;padding:14px 16px;border-bottom:1px solid #e5e5e5}
+.pstats-row{display:grid;grid-template-columns:repeat(4,1fr)}
+.pst{padding:10px 12px;text-align:center;border-right:1px solid #e5e5e5}
+.pst:last-child{border-right:none}
+.pst-val{font-size:17px;font-weight:600}
+.pst-lbl{font-size:11px;color:#888;margin-top:2px}
+.prog-bar{height:5px;border-radius:3px;background:#eee;overflow:hidden;margin-top:4px}
+.prog-fill{height:100%;border-radius:3px}
+.h2h-title{font-size:11px;font-weight:500;color:#888;padding:8px 14px;border-bottom:1px solid #e5e5e5}
+.h2h-row{display:flex;align-items:center;gap:8px;padding:7px 14px;border-bottom:1px solid #e5e5e5;font-size:13px}
+.h2h-row:last-child{border-bottom:none}
+
+/* MATRIX */
+.mx{border-collapse:collapse;font-size:12px}
+.mx th,.mx td{padding:6px 10px;border:1px solid #e5e5e5;text-align:center;white-space:nowrap}
+.mx th{background:#f9f9f9;font-weight:500}
+.mx th:first-child,.mx td:first-child{text-align:left}
+.mc-w{background:#eaf3de;color:#3b6d11;font-weight:500}
+.mc-l{background:#fcebeb;color:#a32d2d}
+.mc-d{background:#faeeda;color:#854f0b}
+.mc-s{background:#f9f9f9}
+
+/* HISTORY */
+.hist-block{background:#fff;border:1px solid #e5e5e5;border-radius:12px;margin-bottom:10px;overflow:hidden}
+.hist-hdr{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;cursor:pointer}
+.hist-hdr:hover{background:#fafafa}
+.hist-body{border-top:1px solid #e5e5e5;padding:12px 16px;display:none}
+.hist-body.open{display:block}
+.podium{display:flex;gap:8px;margin-bottom:12px}
+.podium-item{flex:1;background:#f9f9f9;border-radius:8px;padding:8px 10px;text-align:center}
+
+/* ADMIN USERS */
+.users-table{width:100%;border-collapse:collapse;font-size:13px}
+.users-table th{text-align:left;padding:8px 12px;color:#888;font-weight:500;border-bottom:1px solid #e5e5e5}
+.users-table td{padding:8px 12px;border-bottom:1px solid #e5e5e5;vertical-align:middle}
+.users-table tr:last-child td{border-bottom:none}
+
+/* MISC */
+.filter-bar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:1rem;align-items:center}
+.filter-bar select{font-size:13px;font-family:inherit;padding:6px 10px;border:1px solid #ddd;border-radius:8px;background:#fff}
+.chip-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:1rem}
+.info-chip{font-size:12px;color:#666;background:#f0f0f0;padding:3px 10px;border-radius:8px}
+.info-chip b{color:#1a1a1a}
+.empty{text-align:center;padding:2rem;color:#aaa;font-size:14px}
+.end-bar{background:#f9f9f9;border-radius:8px;padding:11px 14px;display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;gap:10px;flex-wrap:wrap}
+.end-bar p{font-size:13px;color:#888}
+.field-row{display:flex;gap:8px;align-items:center;margin-bottom:10px}
+.field-row input{flex:1;padding:8px 12px;border:1px solid #ddd;border-radius:8px;font-size:13px;font-family:inherit;outline:none}
+.field-row input:focus{border-color:#1a1a1a}
+.field-label{font-size:12px;font-weight:500;color:#666;margin-bottom:6px}
+.mode-picker{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.mode-opt{border:1px solid #e5e5e5;border-radius:12px;padding:14px;cursor:pointer;text-align:center}
+.mode-opt:hover{border-color:#aaa;background:#fafafa}
+.mode-opt.selected{border:2px solid #1a1a1a;background:#fafafa}
+.mode-label{font-size:14px;font-weight:500}
+.mode-desc{font-size:11px;color:#888;margin-top:3px}
+.team-row{background:#f9f9f9;border:1px solid #e5e5e5;border-radius:10px;padding:10px 12px;margin-bottom:8px}
+.team-header{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.team-color-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.team-name-inp{font-size:13px;font-weight:500;font-family:inherit;border:none;background:transparent;color:#1a1a1a;flex:1;outline:none}
+.team-members{display:flex;flex-wrap:wrap;gap:5px;min-height:26px}
+.member-chip{display:flex;align-items:center;gap:4px;background:#fff;border:1px solid #e5e5e5;border-radius:999px;padding:3px 8px 3px 5px;font-size:12px}
+.unassigned-pool{background:#fff;border:1px dashed #ccc;border-radius:8px;padding:8px 10px;margin-bottom:8px}
+.unassigned-label{font-size:11px;color:#888;margin-bottom:6px}
+.unassigned-chips{display:flex;flex-wrap:wrap;gap:5px}
+.assign-chip{display:flex;align-items:center;gap:4px;background:#f0f0f0;border:1px solid #ddd;border-radius:999px;padding:3px 8px 3px 5px;font-size:12px;cursor:pointer}
+.assign-chip:hover{background:#e5e5e5}
+.add-team-btn,.shuffle-btn{font-size:12px;color:#666;cursor:pointer;border:1px solid #ddd;background:none;border-radius:8px;padding:4px 10px;font-family:inherit}
+.add-team-btn:hover,.shuffle-btn:hover{background:#f5f5f5}
+.overlay{min-height:500px;background:rgba(0,0,0,.4);display:flex;align-items:flex-start;justify-content:center;padding:20px 8px;border-radius:12px}
+.modal{background:#fff;border-radius:12px;border:1px solid #e5e5e5;width:100%;max-width:560px;overflow:hidden}
+.modal-hdr{display:flex;align-items:center;justify-content:space-between;padding:13px 16px;border-bottom:1px solid #e5e5e5}
+.modal-title{font-size:15px;font-weight:600}
+.modal-body{padding:16px}
+.loading{text-align:center;padding:3rem;color:#aaa;font-size:14px}
+.sc-name{font-size:15px;font-weight:600;margin-bottom:3px}
+.sc-meta{font-size:12px;color:#888}
+select{padding:6px 10px;border:1px solid #ddd;border-radius:8px;font-size:13px;font-family:inherit;background:#fff;outline:none;width:100%}
+</style>
+</head>
+<body>
+
+<!-- LOGIN PAGE -->
+<div id="page-login" class="page active">
+  <div class="login-wrap">
+    <div class="login-box">
+      <div class="login-logo">🎱</div>
+      <div class="login-title">Pool League</div>
+      <div class="login-sub">Office Pool Tournament</div>
+
+      <!-- TAB SWITCHER -->
+      <div class="login-tabs">
+        <button class="login-tab active" id="tab-guest" onclick="switchLoginTab('guest')">Guest</button>
+        <button class="login-tab" id="tab-admin" onclick="switchLoginTab('admin')">Admin</button>
+      </div>
+
+      <!-- GUEST PANEL -->
+      <div id="panel-guest">
+        <div class="form-group">
+          <label>รหัสเข้าใช้งาน</label>
+          <input type="text" id="guestCode" placeholder="กรอก code..." autocomplete="off"
+            style="text-transform:uppercase;letter-spacing:.1em;font-weight:500"
+            oninput="this.value=this.value.toUpperCase()"
+            onkeydown="if(event.key==='Enter')loginAsGuest()"/>
+        </div>
+        <div class="login-err" id="guestErr"></div>
+        <button class="btn-login" onclick="loginAsGuest()">เข้าดู</button>
+        <div class="guest-hint">ติดต่อ admin เพื่อขอรหัส</div>
+      </div>
+
+      <!-- ADMIN PANEL -->
+      <div id="panel-admin" style="display:none">
+        <div class="form-group">
+          <label>Username</label>
+          <input type="text" id="loginUser" placeholder="username" autocomplete="username"
+            onkeydown="if(event.key==='Enter')document.getElementById('loginPass').focus()"/>
+        </div>
+        <div class="form-group">
+          <label>Password</label>
+          <input type="password" id="loginPass" placeholder="password" autocomplete="current-password"
+            onkeydown="if(event.key==='Enter')login()"/>
+        </div>
+        <div class="login-err" id="loginErr"></div>
+        <button class="btn-login" onclick="login()">เข้าสู่ระบบ</button>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- APP PAGE -->
+<div id="page-app" class="page">
+  <div class="app-wrap">
+    <div class="app-header">
+      <div class="app-title">🎱 Pool League</div>
+      <div class="app-header-right">
+        <div id="headerUserChip"></div>
+        <button class="btn-logout" onclick="logout()">ออกจากระบบ</button>
+      </div>
+    </div>
+
+    <!-- LOBBY -->
+    <div id="view-lobby">
+      <div class="season-grid" id="lobbyGrid"></div>
+      <div style="font-size:12px;font-weight:500;color:#888;margin-bottom:10px">ประวัติ season ที่จบแล้ว</div>
+      <div id="historyList"></div>
+    </div>
+
+    <!-- NEW SEASON MODAL -->
+    <div class="overlay" id="view-new" style="display:none">
+      <div class="modal">
+        <div class="modal-hdr">
+          <div class="modal-title">สร้าง season ใหม่</div>
+          <button class="btn btn-sm" onclick="closeModal()">ปิด</button>
+        </div>
+        <div class="modal-body">
+          <div id="step-mode">
+            <div class="field-label">ชื่อ season</div>
+            <div class="field-row" style="margin-bottom:14px"><input type="text" id="newSeasonName" placeholder="Season 1, Q1 2025..."/></div>
+            <div class="field-label">รูปแบบการแข่งขัน</div>
+            <div class="mode-picker">
+              <div class="mode-opt selected" id="opt-solo" onclick="pickMode('solo')">
+                <div style="font-size:24px;margin-bottom:6px">🎱</div>
+                <div class="mode-label">เดี่ยว</div><div class="mode-desc">1 ต่อ 1</div>
+              </div>
+              <div class="mode-opt" id="opt-team" onclick="pickMode('team')">
+                <div style="font-size:24px;margin-bottom:6px">🤝</div>
+                <div class="mode-label">ทีม</div><div class="mode-desc">จัดทีมแข่งกัน</div>
+              </div>
+            </div>
+            <div style="display:flex;justify-content:flex-end">
+              <button class="btn btn-primary btn-sm" onclick="goStep2()">ถัดไป</button>
+            </div>
+          </div>
+          <div id="step-players" style="display:none">
+            <div class="field-label">เพิ่มผู้เล่น</div>
+            <div class="field-row">
+              <input type="text" id="newPInput" placeholder="ชื่อผู้เล่น..." onkeydown="if(event.key==='Enter')addNewP()"/>
+              <button class="btn btn-primary btn-sm" onclick="addNewP()">+ เพิ่ม</button>
+            </div>
+            <div class="chip-wrap" id="newPList"></div>
+            <div id="teamBuilderSection" style="display:none">
+              <hr style="border:none;border-top:1px solid #e5e5e5;margin:12px 0"/>
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+                <div class="field-label" style="margin:0">จัดทีม</div>
+                <div style="display:flex;gap:6px">
+                  <button class="shuffle-btn" onclick="shuffleTeams()">สุ่มทีม</button>
+                  <button class="add-team-btn" onclick="addTeam()">+ เพิ่มทีม</button>
+                </div>
+              </div>
+              <div class="unassigned-pool" id="unassignedPool"></div>
+              <div id="teamBuilder"></div>
+            </div>
+            <div style="display:flex;justify-content:space-between;margin-top:12px">
+              <button class="btn btn-sm" onclick="backToStep1()">ย้อนกลับ</button>
+              <button class="btn btn-primary btn-sm" onclick="createSeason()">สร้าง season</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SEASON VIEW -->
+    <div id="view-season" style="display:none">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:1.25rem;flex-wrap:wrap">
+        <button class="btn btn-sm" onclick="goLobby()">← lobby</button>
+        <div style="flex:1;font-size:17px;font-weight:600" id="seasonTitle"></div>
+        <span class="badge" id="modeBadge"></span>
+        <span class="badge" id="statusBadge"></span>
+      </div>
+      <div class="tabs" id="seasonTabs">
+        <button class="tab active" onclick="goTab('roster')">ผู้เล่น</button>
+        <button class="tab" onclick="goTab('schedule')">ตารางแข่ง</button>
+        <button class="tab" onclick="goTab('standings')">ตารางคะแนน</button>
+        <button class="tab" onclick="goTab('stats')">สถิติ</button>
+        <button class="tab" onclick="goTab('matrix')">ผลแมตช์</button>
+      </div>
+      <div class="sec active" id="sec-roster">
+        <div id="rosterContent"></div>
+        <div style="display:flex;justify-content:flex-end;margin-top:4px" id="genRow">
+          <button class="btn btn-primary" onclick="generate()">สร้างตารางแข่ง</button>
+        </div>
+        <div class="end-bar" id="endBar" style="display:none">
+          <p>พร้อมจบ season นี้แล้วหรือยัง?</p>
+          <button class="btn btn-sm btn-danger" onclick="endSeason()">จบ season</button>
+        </div>
+      </div>
+      <div class="sec" id="sec-schedule">
+        <div class="filter-bar">
+          <select id="filterPlayer" onchange="renderSchedule()" style="flex:1;min-width:120px"></select>
+          <select id="filterStatus" onchange="renderSchedule()" style="width:auto">
+            <option value="">ทุกสถานะ</option>
+            <option value="pending">รอแข่ง</option>
+            <option value="done">จบแล้ว</option>
+          </select>
+        </div>
+        <div class="chip-row" id="schedChips"></div>
+        <div class="match-list" id="matchList"></div>
+      </div>
+      <div class="sec" id="sec-standings">
+        <div class="chip-row" id="standChips"></div>
+        <div class="card" style="overflow:hidden" id="standTable"></div>
+      </div>
+      <div class="sec" id="sec-stats">
+        <select id="statSelect" onchange="renderStats()" style="margin-bottom:1rem"></select>
+        <div id="statContent"></div>
+      </div>
+      <div class="sec" id="sec-matrix">
+        <div style="overflow-x:auto" id="matrixContent"></div>
+      </div>
+    </div>
+
+    <!-- ADMIN PANEL -->
+    <div id="view-admin" style="display:none">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:1.25rem">
+        <button class="btn btn-sm" onclick="goLobby()">← lobby</button>
+        <div style="font-size:17px;font-weight:600">จัดการผู้ใช้</div>
+      </div>
+      <div class="card">
+        <div class="card-body">
+          <div style="font-size:13px;font-weight:500;margin-bottom:12px">เพิ่มผู้ใช้ใหม่</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr auto auto;gap:8px;align-items:center">
+            <input type="text" id="newUsername" placeholder="username"/>
+            <input type="password" id="newPassword" placeholder="password"/>
+            <select id="newRole" style="width:auto">
+              <option value="viewer">viewer</option>
+              <option value="admin">admin</option>
+            </select>
+            <button class="btn btn-primary btn-sm" onclick="addUser()">+ เพิ่ม</button>
+          </div>
+          <div style="font-size:11px;color:#aaa;margin-top:8px">password จะถูก hash ก่อนบันทึก ไม่มีใครเห็น plain text</div>
+        </div>
+      </div>
+      <div class="card" style="overflow:hidden">
+        <table class="users-table" id="usersTable">
+          <thead><tr><th>Username</th><th>Role</th><th>สร้างโดย</th><th></th></tr></thead>
+          <tbody id="usersBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// ─── CONFIG ───────────────────────────────────────
+// แก้ username/password admin ได้ที่นี่เลย
+const ADMIN_USERNAME = 'admin';
+const ADMIN_PASSWORD = 'admin1234';
+// ─────────────────────────────────────────────────
+
+const AVBG=['#B5D4F4','#9FE1CB','#FAC775','#F4C0D1','#C0DD97','#F5C4B3','#CECBF6','#D3D1C7','#F7C1C1'];
+const AVFG=['#0C447C','#085041','#633806','#72243E','#27500A','#712B13','#3C3489','#444441','#791F1F'];
+const TBGC=['#E6F1FB','#E1F5EE','#FAECE7','#FBEAF0','#EEEDFE','#FAEEDA','#EAF3DE','#F1EFE8'];
+const TFGC=['#0C447C','#085041','#712B13','#72243E','#3C3489','#633806','#27500A','#444441'];
+const TDOT=['#378ADD','#1D9E75','#D85A30','#D4537E','#7F77DD','#BA7517','#639922','#888780'];
+
+let currentUser=null;
+let seasons=[],users=[];
+let currentSid=null;
+let nid=1;
+let newPlayers=[],ntid=1,newTeams=[],ntTeamId=1,newMode='solo';
+
+// ─── AUTH ─────────────────────────────────────────
+function switchLoginTab(tab){
+  document.getElementById('tab-guest').classList.toggle('active', tab==='guest');
+  document.getElementById('tab-admin').classList.toggle('active', tab==='admin');
+  document.getElementById('panel-guest').style.display = tab==='guest'?'block':'none';
+  document.getElementById('panel-admin').style.display = tab==='admin'?'block':'none';
+  document.getElementById('loginErr').textContent='';
+  document.getElementById('guestErr').textContent='';
+  if(tab==='guest') document.getElementById('guestCode').focus();
+  else document.getElementById('loginUser').focus();
+}
+
+function shakeInput(id){
+  const el=document.getElementById(id);
+  el.classList.remove('input-err');
+  void el.offsetWidth;
+  el.classList.add('input-err');
+  setTimeout(()=>el.classList.remove('input-err'),400);
+}
+
+function login(){
+  const username=document.getElementById('loginUser').value.trim();
+  const password=document.getElementById('loginPass').value;
+  const errEl=document.getElementById('loginErr');
+  errEl.textContent='';
+  if(!username){shakeInput('loginUser');errEl.textContent='กรุณากรอก username';return;}
+  if(!password){shakeInput('loginPass');errEl.textContent='กรุณากรอก password';return;}
+  if(username===ADMIN_USERNAME && password===ADMIN_PASSWORD){
+    currentUser={username,role:'admin'};
+    sessionStorage.setItem('pool_user',JSON.stringify(currentUser));
+    showApp();
+  } else {
+    shakeInput('loginPass');
+    errEl.textContent='username หรือ password ไม่ถูกต้อง';
+  }
+}
+
+function loginAsGuest(){
+  const code=document.getElementById('guestCode').value.trim().toUpperCase();
+  const errEl=document.getElementById('guestErr');
+  errEl.textContent='';
+  if(code!=='TNCC'){
+    shakeInput('guestCode');
+    errEl.textContent='รหัสไม่ถูกต้อง';
+    return;
+  }
+  currentUser={username:'Guest',role:'viewer'};
+  sessionStorage.setItem('pool_user',JSON.stringify(currentUser));
+  showApp();
+}
+
+function logout(){
+  currentUser=null;
+  sessionStorage.removeItem('pool_user');
+  document.getElementById('page-app').classList.remove('active');
+  document.getElementById('page-login').classList.add('active');
+  if(document.getElementById('loginUser')) document.getElementById('loginUser').value='';
+  if(document.getElementById('loginPass')) document.getElementById('loginPass').value='';
+  if(document.getElementById('guestCode')) document.getElementById('guestCode').value='';
+  switchLoginTab('guest');
+}
+
+function isAdmin(){return currentUser&&currentUser.role==='admin'}
+
+async function showApp(){
+  document.getElementById('page-login').classList.remove('active');
+  document.getElementById('page-app').classList.add('active');
+  const chip=document.getElementById('headerUserChip');
+  chip.innerHTML=`<span class="user-chip">${currentUser.username}</span> <span class="badge ${currentUser.role==='admin'?'role-admin':'role-viewer'}">${currentUser.role}</span>`;
+  await loadData();
+  renderLobby();
+  showView('view-lobby');
+}
+
+// ─── DATA (localStorage) ─────────────────────────
+async function loadData(){
+  try{
+    const raw=localStorage.getItem('pool_data');
+    const data=raw?JSON.parse(raw):{seasons:[]};
+    seasons=data.seasons||[];
+    nid=seasons.length?Math.max(...seasons.map(s=>s.id))+1:1;
+  }catch(e){console.error('load error',e);seasons=[];}
+}
+
+async function saveData(){
+  try{
+    localStorage.setItem('pool_data',JSON.stringify({seasons}));
+  }catch(e){alert('บันทึกไม่สำเร็จ: '+e.message);}
+}
+
+async function saveUsers(){
+  try{
+    await fetch('/api/users',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({users})});
+  }catch(e){alert('บันทึกไม่สำเร็จ: '+e.message);}
+}
+
+// ─── VIEWS ───────────────────────────────────────
+function showView(id){
+  ['view-lobby','view-new','view-season','view-admin'].forEach(v=>{
+    document.getElementById(v).style.display=v===id?'block':'none';
+  });
+}
+
+// ─── LOBBY ───────────────────────────────────────
+function renderLobby(){
+  const active=seasons.filter(s=>!s.ended);
+  const ended=seasons.filter(s=>s.ended);
+  let html='';
+  active.forEach(s=>{
+    const done=s.matches.filter(m=>m.done).length;
+    const cnt=s.mode==='team'?s.teams.length:s.players.length;
+    html+=`<div class="season-card is-active" onclick="openSeason(${s.id})">
+      <span class="badge ${s.mode==='team'?'mode-team':'mode-solo'}" style="margin-bottom:6px">${s.mode==='team'?'ทีม':'เดี่ยว'}</span>
+      <div class="sc-name">${s.name}</div>
+      <div class="sc-meta">${cnt} ${s.mode==='team'?'ทีม':'คน'} · ${done}/${s.matches.length} แมตช์</div>
+      <span class="badge b-active" style="margin-top:6px">กำลังแข่ง</span>
+    </div>`;
+  });
+  if(isAdmin()){
+    html+=`<div class="new-card" onclick="openNewModal()">+ สร้าง season ใหม่</div>`;
+  }
+  document.getElementById('lobbyGrid').innerHTML=html;
+
+  const icons=['🥇','🥈','🥉'];
+  const hEl=document.getElementById('historyList');
+  if(!ended.length){hEl.innerHTML='<div class="empty">ยังไม่มี season ที่จบแล้ว</div>';
+  }else{
+    hEl.innerHTML=ended.map(s=>{
+      const top=calcStats(s).slice(0,3);
+      return`<div class="hist-block">
+        <div class="hist-hdr" onclick="document.getElementById('hb-${s.id}').classList.toggle('open')">
+          <div>
+            <span class="badge ${s.mode==='team'?'mode-team':'mode-solo'}">${s.mode==='team'?'ทีม':'เดี่ยว'}</span>
+            <div style="font-size:14px;font-weight:600;margin-top:4px">${s.name}</div>
+            <div style="font-size:12px;color:#888;margin-top:2px">${s.mode==='team'?s.teams.length:s.players.length} ${s.mode==='team'?'ทีม':'คน'} · ${s.matches.length} แมตช์</div>
+          </div>
+          <span style="font-size:18px">⌄</span>
+        </div>
+        <div class="hist-body" id="hb-${s.id}">
+          <div style="display:flex;gap:8px;margin-bottom:12px">${top.map((st,i)=>`<div class="podium-item"><div style="font-size:16px;margin-bottom:4px">${icons[i]}</div><div style="font-size:13px;font-weight:600">${st.name}</div><div style="font-size:11px;color:#888;margin-top:2px">${st.pts} แต้ม</div></div>`).join('')}</div>
+          <table class="tbl" style="font-size:12px"><thead><tr><th class="c">#</th><th>ชื่อ</th><th class="c">แข่ง</th><th class="c">ชนะ</th><th class="c">แต้ม</th></tr></thead>
+          <tbody>${calcStats(s).map((st,i)=>{const rk=i===0?'rk1':i===1?'rk2':i===2?'rk3':'rkn';return`<tr><td class="c"><span class="rk ${rk}">${i+1}</span></td><td>${st.name}</td><td class="c">${st.played}</td><td class="c win-c">${st.w}</td><td class="c" style="font-weight:600">${st.pts}</td></tr>`}).join('')}</tbody></table>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  // admin button
+  const adminEl=document.getElementById('adminBtn');
+  if(adminEl)adminEl.remove();
+  if(isAdmin()){
+    const btn=document.createElement('button');
+    btn.id='adminBtn';
+    btn.className='btn btn-sm';
+    btn.style.cssText='position:fixed;bottom:20px;right:20px;';
+    btn.textContent='จัดการผู้ใช้';
+    btn.onclick=openAdmin;
+    document.body.appendChild(btn);
+  }
+}
+
+// ─── NEW SEASON ───────────────────────────────────
+function openNewModal(){
+  if(!isAdmin())return;
+  newPlayers=[];ntid=1;newTeams=[];ntTeamId=1;newMode='solo';
+  document.getElementById('newSeasonName').value='Season '+(seasons.length+1);
+  document.getElementById('newPInput').value='';
+  document.getElementById('step-mode').style.display='block';
+  document.getElementById('step-players').style.display='none';
+  pickMode('solo');
+  showView('view-new');
+}
+function closeModal(){showView('view-lobby');}
+function pickMode(m){newMode=m;document.getElementById('opt-solo').className='mode-opt'+(m==='solo'?' selected':'');document.getElementById('opt-team').className='mode-opt'+(m==='team'?' selected':'');}
+function goStep2(){document.getElementById('step-mode').style.display='none';document.getElementById('step-players').style.display='block';renderNewPList();renderTeamBuilder();}
+function backToStep1(){document.getElementById('step-mode').style.display='block';document.getElementById('step-players').style.display='none';}
+
+function addNewP(){const inp=document.getElementById('newPInput');const nm=inp.value.trim();if(!nm||newPlayers.find(p=>p.name.toLowerCase()===nm.toLowerCase()))return inp.value='';newPlayers.push({id:ntid++,name:nm});inp.value='';renderNewPList();renderTeamBuilder();}
+function removeNewP(id){newPlayers=newPlayers.filter(p=>p.id!==id);newTeams.forEach(t=>t.members=t.members.filter(m=>m!==id));renderNewPList();renderTeamBuilder();}
+function renderNewPList(){document.getElementById('newPList').innerHTML=newPlayers.map((p,i)=>`<div class="p-chip">${avEl(p.name,i,26,10)}<div style="min-width:0"><div class="p-name">${p.name}</div></div><button class="rm" onclick="removeNewP(${p.id})">×</button></div>`).join('');}
+
+function renderTeamBuilder(){
+  const sec=document.getElementById('teamBuilderSection');
+  if(newMode!=='team'){sec.style.display='none';return;}
+  sec.style.display='block';
+  if(!newTeams.length&&newPlayers.length>=2)newTeams=[{id:ntTeamId++,name:'ทีม A',members:[]},{id:ntTeamId++,name:'ทีม B',members:[]}];
+  const assigned=new Set(newTeams.flatMap(t=>t.members));
+  const unassigned=newPlayers.filter(p=>!assigned.has(p.id));
+  document.getElementById('unassignedPool').innerHTML=`<div class="unassigned-label">ยังไม่ได้อยู่ทีม (${unassigned.length} คน)</div><div class="unassigned-chips">${unassigned.map(p=>`<div class="assign-chip" onclick="showAssignMenu(${p.id},event)">${avEl(p.name,newPlayers.indexOf(p),18,8)}<span>${p.name}</span></div>`).join('')||'<span style="font-size:12px;color:#aaa">ทุกคนมีทีมแล้ว</span>'}</div>`;
+  document.getElementById('teamBuilder').innerHTML=newTeams.map((t,ti)=>{
+    const members=newPlayers.filter(p=>t.members.includes(p.id));
+    return`<div class="team-row"><div class="team-header"><div class="team-color-dot" style="background:${TDOT[ti%8]}"></div><input class="team-name-inp" value="${t.name}" oninput="newTeams[${ti}].name=this.value"/><button class="rm" onclick="removeTeam(${t.id})">×</button></div><div class="team-members">${members.map(p=>`<div class="member-chip">${avEl(p.name,newPlayers.indexOf(p),16,7)}<span>${p.name}</span><button class="rm" onclick="removeFromTeam(${t.id},${p.id})">×</button></div>`).join('')||'<span style="font-size:11px;color:#aaa">ยังไม่มีสมาชิก</span>'}</div></div>`;
+  }).join('');
+}
+
+function showAssignMenu(pid,e){
+  document.getElementById('assignMenu')&&document.getElementById('assignMenu').remove();
+  const menu=document.createElement('div');menu.id='assignMenu';
+  menu.style.cssText='position:fixed;background:#fff;border:1px solid #ddd;border-radius:8px;padding:4px;z-index:9999;min-width:120px;font-size:13px;box-shadow:0 4px 12px rgba(0,0,0,.1)';
+  menu.innerHTML=newTeams.map(t=>`<div onclick="assignToTeam(${pid},${t.id})" style="padding:6px 10px;cursor:pointer;border-radius:4px" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background=''">${t.name}</div>`).join('');
+  document.body.appendChild(menu);
+  menu.style.top=e.clientY+'px';menu.style.left=e.clientX+'px';
+  setTimeout(()=>document.addEventListener('click',()=>menu.remove(),{once:true}),10);
+}
+function assignToTeam(pid,tid){newTeams.forEach(t=>t.members=t.members.filter(m=>m!==pid));const t=newTeams.find(t=>t.id===tid);if(t)t.members.push(pid);renderTeamBuilder();}
+function removeFromTeam(tid,pid){const t=newTeams.find(t=>t.id===tid);if(t)t.members=t.members.filter(m=>m!==pid);renderTeamBuilder();}
+function addTeam(){newTeams.push({id:ntTeamId++,name:`ทีม ${String.fromCharCode(64+newTeams.length+1)}`,members:[]});renderTeamBuilder();}
+function removeTeam(tid){newTeams=newTeams.filter(t=>t.id!==tid);renderTeamBuilder();}
+function shuffleTeams(){const ps=[...newPlayers].sort(()=>Math.random()-.5);newTeams.forEach(t=>t.members=[]);ps.forEach((p,i)=>{const t=newTeams[i%newTeams.length];if(t)t.members.push(p.id);});renderTeamBuilder();}
+
+async function createSeason(){
+  const nm=document.getElementById('newSeasonName').value.trim()||'Season '+(seasons.length+1);
+  if(newPlayers.length<2)return alert('ต้องมีผู้เล่นอย่างน้อย 2 คน');
+  let players,teams=[];
+  if(newMode==='team'){
+    if(newTeams.length<2)return alert('ต้องมีอย่างน้อย 2 ทีม');
+    const unassigned=newPlayers.filter(p=>!newTeams.some(t=>t.members.includes(p.id)));
+    if(unassigned.length)return alert(`ยังมีผู้เล่นที่ไม่ได้อยู่ทีม: ${unassigned.map(p=>p.name).join(', ')}`);
+    teams=newTeams.map((t,ti)=>({id:ti+1,name:t.name,colorIdx:ti,members:t.members.map(mid=>{const p=newPlayers.find(x=>x.id===mid);return p?p.name:''}).filter(Boolean)}));
+    players=teams.map((t,i)=>({id:i+1,name:t.name,isTeam:true,members:t.members,colorIdx:i}));
+  }else{players=newPlayers.map((p,i)=>({id:i+1,name:p.name}));}
+  seasons.push({id:nid++,name:nm,mode:newMode,players,teams,matches:genMatches(players),ended:false,createdBy:currentUser.username});
+  await saveData();
+  closeModal();
+  openSeason(seasons[seasons.length-1].id);
+}
+
+// ─── SEASON VIEW ──────────────────────────────────
+function cs(){return seasons.find(s=>s.id===currentSid)}
+
+function openSeason(sid){
+  currentSid=sid;const s=cs();
+  showView('view-season');
+  document.getElementById('seasonTitle').textContent=s.name;
+  document.getElementById('modeBadge').textContent=s.mode==='team'?'ทีม':'เดี่ยว';
+  document.getElementById('modeBadge').className='badge '+(s.mode==='team'?'mode-team':'mode-solo');
+  document.getElementById('statusBadge').textContent=s.ended?'จบแล้ว':'กำลังแข่ง';
+  document.getElementById('statusBadge').className='badge '+(s.ended?'b-ended':'b-active');
+  document.getElementById('genRow').style.display=s.matches.length||s.ended||!isAdmin()?'none':'flex';
+  document.getElementById('endBar').style.display=!s.ended&&s.matches.length&&isAdmin()?'flex':'none';
+  goTab('roster');renderRoster();renderSchedule();renderStandings();renderMatrix();
+}
+function goLobby(){currentSid=null;showView('view-lobby');renderLobby();}
+function goTab(name){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.sec').forEach(s=>s.classList.remove('active'));
+  document.querySelector(`.tab[onclick="goTab('${name}')"]`).classList.add('active');
+  document.getElementById('sec-'+name).classList.add('active');
+  if(name==='stats')renderStats();
+}
+
+function renderRoster(){
+  const s=cs();if(!s)return;
+  const el=document.getElementById('rosterContent');
+  if(s.mode==='team'){
+    el.innerHTML=s.teams.map((t,ti)=>{
+      const played=s.matches.filter(m=>m.done&&(m.p1===ti+1||m.p2===ti+1)).length;
+      return`<div class="card" style="padding:12px 14px;margin-bottom:8px"><div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><div class="team-color-dot" style="background:${TDOT[ti%8]}"></div><div style="font-size:14px;font-weight:600">${t.name}</div><div style="font-size:11px;color:#888;margin-left:auto">${played} แมตช์</div></div><div style="display:flex;flex-wrap:wrap;gap:5px">${t.members.map((m,mi)=>`<div class="member-chip">${avEl(m,ti*3+mi,18,8)}<span>${m}</span></div>`).join('')}</div></div>`;
+    }).join('');
+  }else{
+    el.innerHTML=`<div class="chip-wrap">${s.players.map((p,i)=>{const gs=s.matches.filter(m=>m.done&&(m.p1===p.id||m.p2===p.id)).length;return`<div class="p-chip">${avEl(p.name,i,28,11)}<div style="min-width:0"><div class="p-name">${p.name}</div><div class="p-sub">${gs} แมตช์</div></div></div>`;}).join('')}</div>`;
+  }
+}
+
+async function generate(){
+  const s=cs();if(!s||!isAdmin())return;
+  s.matches=genMatches(s.players);
+  document.getElementById('genRow').style.display='none';
+  document.getElementById('endBar').style.display='flex';
+  await saveData();
+  renderRoster();renderSchedule();renderStandings();renderMatrix();goTab('schedule');
+}
+
+async function endSeason(){
+  const s=cs();if(!s||!isAdmin())return;
+  const done=s.matches.filter(m=>m.done).length;
+  if(!confirm(done<s.matches.length?`ยังมีอีก ${s.matches.length-done} แมตช์ที่ยังไม่แข่ง จบ season เลยไหม?`:'ยืนยันจบ season นี้?'))return;
+  s.ended=true;
+  await saveData();
+  openSeason(s.id);renderLobby();
+}
+
+function renderSchedule(){
+  const s=cs();if(!s)return;
+  const fp=document.getElementById('filterPlayer');const prev=fp.value;
+  fp.innerHTML='<option value="">ผู้เล่นทั้งหมด</option>'+s.players.map(p=>`<option value="${p.id}">${p.name}</option>`).join('');
+  if(prev)fp.value=prev;
+  const fPid=parseInt(fp.value)||0,fSt=document.getElementById('filterStatus').value;
+  let vis=s.matches;
+  if(fPid)vis=vis.filter(m=>m.p1===fPid||m.p2===fPid);
+  if(fSt==='pending')vis=vis.filter(m=>!m.done);
+  if(fSt==='done')vis=vis.filter(m=>m.done);
+  const done=s.matches.filter(m=>m.done).length;
+  document.getElementById('schedChips').innerHTML=`<div class="info-chip">ทั้งหมด <b>${s.matches.length}</b></div><div class="info-chip">เสร็จ <b>${done}</b></div><div class="info-chip">รอ <b>${s.matches.length-done}</b></div><div class="info-chip">แสดง <b>${vis.length}</b></div>`;
+  if(!vis.length){document.getElementById('matchList').innerHTML='<div class="empty">ไม่มีแมตช์</div>';return;}
+  document.getElementById('matchList').innerHTML=vis.map(m=>{
+    const p1=s.players.find(p=>p.id===m.p1),p2=s.players.find(p=>p.id===m.p2);if(!p1||!p2)return'';
+    const i1=s.players.indexOf(p1),i2=s.players.indexOf(p2);
+    const p1w=m.done&&parseInt(m.s1)>parseInt(m.s2),p2w=m.done&&parseInt(m.s2)>parseInt(m.s1);
+    const av1=p1.isTeam?tavEl(p1.name,i1,32,11):avEl(p1.name,i1,32,11);
+    const av2=p2.isTeam?tavEl(p2.name,i2,32,11):avEl(p2.name,i2,32,11);
+    const canEdit=isAdmin()&&!s.ended;
+    return`<div class="match-card">
+      <div class="player-col">${av1}<div><div class="pname ${p1w?'win-c':''}">${p1.name}</div>${p1.isTeam?`<div class="psub">${p1.members.join(', ')}</div>`:''}</div></div>
+      <div class="mid-col">
+        <div class="score-row"><input class="si" type="number" min="0" value="${m.s1}" placeholder="0" ${canEdit?'':'disabled'} oninput="upScore(${m.id},1,this.value)"/><span class="colon">:</span><input class="si" type="number" min="0" value="${m.s2}" placeholder="0" ${canEdit?'':'disabled'} oninput="upScore(${m.id},2,this.value)"/></div>
+        ${canEdit?`<button class="save-btn" onclick="confirmMatch(${m.id})">${m.done?'แก้':'บันทึก'}</button>`:`<span class="badge ${m.done?'b-done':'b-pend'}">${m.done?'จบ':'รอ'}</span>`}
+      </div>
+      <div class="player-col right">${av2}<div style="text-align:right"><div class="pname ${p2w?'win-c':''}">${p2.name}</div>${p2.isTeam?`<div class="psub">${p2.members.join(', ')}</div>`:''}</div></div>
+    </div>`;
+  }).join('');
+}
+
+function upScore(id,pl,v){const s=cs();if(!s)return;const m=s.matches.find(x=>x.id===id);if(m){if(pl===1)m.s1=v;else m.s2=v;}}
+async function confirmMatch(id){
+  const s=cs();if(!s||!isAdmin())return;
+  const m=s.matches.find(x=>x.id===id);if(!m)return;
+  if(m.s1===''&&m.s2==='')return alert('กรุณากรอกสกอร์');
+  m.s1=parseInt(m.s1)||0;m.s2=parseInt(m.s2)||0;m.done=true;
+  await saveData();
+  renderSchedule();renderStandings();renderMatrix();renderRoster();
+}
+
+function calcStats(s){
+  const st={};
+  s.players.forEach((p,i)=>{const bg=p.isTeam?TBGC[i%8]:AVBG[i%9],fg=p.isTeam?TFGC[i%8]:AVFG[i%9];st[p.id]={p,name:p.name,avHtml:`<div class="av" style="width:22px;height:22px;font-size:9px;background:${bg};color:${fg}">${ci(p.name)}</div>`,w:0,l:0,d:0,pts:0,gf:0,ga:0,played:0};});
+  s.matches.filter(m=>m.done).forEach(m=>{if(!st[m.p1]||!st[m.p2])return;const s1=parseInt(m.s1)||0,s2=parseInt(m.s2)||0;st[m.p1].gf+=s1;st[m.p1].ga+=s2;st[m.p1].played++;st[m.p2].gf+=s2;st[m.p2].ga+=s1;st[m.p2].played++;if(s1>s2){st[m.p1].w++;st[m.p1].pts+=3;st[m.p2].l++;}else if(s2>s1){st[m.p2].w++;st[m.p2].pts+=3;st[m.p1].l++;}else{st[m.p1].d++;st[m.p1].pts++;st[m.p2].d++;st[m.p2].pts++;}});
+  return Object.values(st).sort((a,b)=>b.pts-a.pts||(b.gf-b.ga)-(a.gf-a.ga)||b.gf-a.gf);
+}
+
+function renderStandings(){
+  const s=cs();if(!s)return;
+  const sorted=calcStats(s);const done=s.matches.filter(m=>m.done).length;
+  document.getElementById('standChips').innerHTML=`<div class="info-chip">${s.mode==='team'?'ทีม':'เดี่ยว'} · Round Robin</div><div class="info-chip">แมตช์เสร็จ <b>${done}/${s.matches.length}</b></div>`;
+  document.getElementById('standTable').innerHTML=`<table class="tbl"><thead><tr><th class="c">#</th><th>${s.mode==='team'?'ทีม':'ชื่อ'}</th><th class="c">แข่ง</th><th class="c">ชนะ</th><th class="c">แพ้</th><th class="c">เสมอ</th><th class="c">ได้</th><th class="c">เสีย</th><th class="c">ต่าง</th><th class="c">แต้ม</th></tr></thead><tbody>${sorted.map((st,i)=>{const rk=i===0?'rk1':i===1?'rk2':i===2?'rk3':'rkn';const diff=st.gf-st.ga;const wp=st.played?Math.round(st.w/st.played*100):0;return`<tr><td class="c"><span class="rk ${rk}">${i+1}</span></td><td><div style="display:flex;align-items:center;gap:8px">${st.avHtml}<div><div style="font-weight:600">${st.name}</div>${st.p.isTeam?`<div style="font-size:10px;color:#888">${st.p.members.join(', ')}</div>`:`<div style="font-size:10px;color:#888">win ${wp}%</div>`}</div></div></td><td class="c">${st.played}</td><td class="c win-c" style="font-weight:600">${st.w}</td><td class="c lose-c">${st.l}</td><td class="c">${st.d}</td><td class="c">${st.gf}</td><td class="c">${st.ga}</td><td class="c" style="color:${diff>=0?'#3b6d11':'#a32d2d'}">${diff>0?'+':''}${diff}</td><td class="c" style="font-weight:600;font-size:15px">${st.pts}</td></tr>`;}).join('')}</tbody></table>`;
+}
+
+function renderStats(){
+  const s=cs();if(!s)return;
+  const sel=document.getElementById('statSelect');const prev=sel.value;
+  sel.innerHTML=s.players.map(p=>`<option value="${p.id}">${p.name}</option>`).join('');
+  if(prev&&s.players.find(p=>p.id==prev))sel.value=prev;
+  const pid=parseInt(sel.value);const p=s.players.find(x=>x.id===pid);if(!p){document.getElementById('statContent').innerHTML='';return;}
+  const pidx=s.players.indexOf(p);const bg=p.isTeam?TBGC[pidx%8]:AVBG[pidx%9];const fg=p.isTeam?TFGC[pidx%8]:AVFG[pidx%9];
+  const my=s.matches.filter(m=>m.done&&(m.p1===pid||m.p2===pid));
+  let w=0,l=0,d=0,gf=0,ga=0;my.forEach(m=>{const mine=m.p1===pid;const ms=mine?parseInt(m.s1)||0:parseInt(m.s2)||0;const os=mine?parseInt(m.s2)||0:parseInt(m.s1)||0;gf+=ms;ga+=os;if(ms>os)w++;else if(os>ms)l++;else d++;});
+  const pld=my.length,wp=pld?Math.round(w/pld*100):0;
+  const h2h=s.players.filter(op=>op.id!==pid).map(op=>{const ms=s.matches.filter(m=>m.done&&((m.p1===pid&&m.p2===op.id)||(m.p2===pid&&m.p1===op.id)));let ow=0,ol=0,od=0;ms.forEach(m=>{const mine=m.p1===pid;const sv=mine?parseInt(m.s1)||0:parseInt(m.s2)||0;const ov=mine?parseInt(m.s2)||0:parseInt(m.s1)||0;if(sv>ov)ow++;else if(ov>sv)ol++;else od++;});return{op,w:ow,l:ol,d:od,played:ms.length};}).filter(x=>x.played>0);
+  document.getElementById('statContent').innerHTML=`
+    <div class="card" style="overflow:hidden;margin-bottom:1rem">
+      <div class="profile-hdr"><div class="av" style="width:46px;height:46px;font-size:16px;background:${bg};color:${fg}">${ci(p.name)}</div><div><div style="font-size:15px;font-weight:600">${p.name}</div>${p.isTeam?`<div style="font-size:11px;color:#888;margin-top:2px">${p.members.join(' · ')}</div>`:''}<div style="font-size:12px;color:#888;margin-top:2px">${pld} แมตช์ · win ${wp}%</div></div></div>
+      <div class="pstats-row"><div class="pst"><div class="pst-val win-c">${w}</div><div class="pst-lbl">ชนะ</div></div><div class="pst"><div class="pst-val lose-c">${l}</div><div class="pst-lbl">แพ้</div></div><div class="pst"><div class="pst-val">${d}</div><div class="pst-lbl">เสมอ</div></div><div class="pst"><div class="pst-val">${gf-ga>0?'+':''}${gf-ga}</div><div class="pst-lbl">ต่าง</div></div></div>
+    </div>
+    <div class="stat-grid"><div class="stat-card"><div class="stat-label">แต้มรวม</div><div class="stat-val">${w*3+d}</div></div><div class="stat-card"><div class="stat-label">ได้/เสีย</div><div class="stat-val">${gf}/${ga}</div></div><div class="stat-card"><div class="stat-label">win rate</div><div class="stat-val">${wp}%</div><div class="prog-bar"><div class="prog-fill" style="width:${wp}%;background:${bg}"></div></div></div><div class="stat-card"><div class="stat-label">เฉลี่ย/แมตช์</div><div class="stat-val">${pld?+(gf/pld).toFixed(1):0}</div></div></div>
+    ${h2h.length?`<div class="card" style="overflow:hidden"><div class="h2h-title">head-to-head</div>${h2h.map(x=>{const oi=s.players.indexOf(x.op);const obg=x.op.isTeam?TBGC[oi%8]:AVBG[oi%9];const ofg=x.op.isTeam?TFGC[oi%8]:AVFG[oi%9];const cls=x.w>x.l?'win-c':x.l>x.w?'lose-c':'';return`<div class="h2h-row"><div class="av" style="width:22px;height:22px;font-size:9px;background:${obg};color:${ofg}">${ci(x.op.name)}</div><div style="flex:1">${x.op.name}</div><div class="${cls}" style="font-weight:600;font-size:12px">${x.w}W ${x.l}L ${x.d}D</div></div>`;}).join('')}</div>`:''}`;
+}
+
+function renderMatrix(){
+  const s=cs();if(!s||!s.players.length){document.getElementById('matrixContent').innerHTML='<div class="empty">ยังไม่มีข้อมูล</div>';return;}
+  const res={};s.matches.filter(m=>m.done).forEach(m=>{res[`${m.p1}_${m.p2}`]={s1:parseInt(m.s1)||0,s2:parseInt(m.s2)||0};res[`${m.p2}_${m.p1}`]={s1:parseInt(m.s2)||0,s2:parseInt(m.s1)||0};});
+  document.getElementById('matrixContent').innerHTML=`<table class="mx"><thead><tr><th></th>${s.players.map(p=>`<th>${p.name}</th>`).join('')}</tr></thead><tbody>${s.players.map((p1,i)=>{const bg=p1.isTeam?TBGC[i%8]:AVBG[i%9];const fg=p1.isTeam?TFGC[i%8]:AVFG[i%9];return`<tr><td style="font-weight:500;white-space:nowrap"><div style="display:flex;align-items:center;gap:5px"><div class="av" style="width:20px;height:20px;font-size:8px;background:${bg};color:${fg}">${ci(p1.name)}</div>${p1.name}</div></td>${s.players.map(p2=>{if(p1.id===p2.id)return`<td class="mc-s">—</td>`;const r=res[`${p1.id}_${p2.id}`];if(!r)return`<td style="color:#aaa">-</td>`;const cls=r.s1>r.s2?'mc-w':r.s1<r.s2?'mc-l':'mc-d';return`<td class="${cls}">${r.s1}:${r.s2}</td>`;}).join('')}</tr>`;}).join('')}</tbody></table>`;
+}
+
+// ─── ADMIN: USERS ─────────────────────────────────
+async function openAdmin(){
+  await loadData();
+  showView('view-admin');
+  renderUsersTable();
+}
+
+function renderUsersTable(){
+  document.getElementById('usersBody').innerHTML=users.map(u=>`<tr>
+    <td style="font-weight:500">${u.username}</td>
+    <td><span class="badge ${u.role==='admin'?'role-admin':'role-viewer'}">${u.role}</span></td>
+    <td style="color:#888;font-size:12px">${u.createdBy||'-'}</td>
+    <td><button class="btn btn-sm btn-danger" onclick="deleteUser('${u.username}')" ${u.username===currentUser.username?'disabled':''}>ลบ</button></td>
+  </tr>`).join('');
+}
+
+async function addUser(){
+  const username=document.getElementById('newUsername').value.trim();
+  const password=document.getElementById('newPassword').value;
+  const role=document.getElementById('newRole').value;
+  if(!username||!password)return alert('กรุณากรอก username และ password');
+  if(users.find(u=>u.username===username))return alert('username นี้มีอยู่แล้ว');
+  try{
+    const res=await fetch('/api/users',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'add',username,password,role,createdBy:currentUser.username})});
+    if(!res.ok)throw new Error(await res.text());
+    await loadData();
+    renderUsersTable();
+    document.getElementById('newUsername').value='';
+    document.getElementById('newPassword').value='';
+  }catch(e){alert('เพิ่มผู้ใช้ไม่สำเร็จ: '+e.message);}
+}
+
+async function deleteUser(username){
+  if(!confirm(`ลบผู้ใช้ "${username}" ใช่ไหม?`))return;
+  try{
+    const res=await fetch('/api/users',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'delete',username})});
+    if(!res.ok)throw new Error(await res.text());
+    await loadData();renderUsersTable();
+  }catch(e){alert('ลบไม่สำเร็จ: '+e.message);}
+}
+
+// ─── HELPERS ─────────────────────────────────────
+function ci(n){return(n||'?').split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2)}
+function avEl(name,idx,sz=28,fsz=11){const bg=AVBG[idx%9],fg=AVFG[idx%9];return`<div class="av" style="width:${sz}px;height:${sz}px;font-size:${fsz}px;background:${bg};color:${fg}">${ci(name)}</div>`}
+function tavEl(name,idx,sz=28,fsz=11){return`<div class="av" style="width:${sz}px;height:${sz}px;font-size:${fsz}px;background:${TBGC[idx%8]};color:${TFGC[idx%8]}">${ci(name)}</div>`}
+
+function genMatches(ps){
+  const arr=[...ps];if(arr.length%2)arr.push(null);
+  const n=arr.length,half=n/2;let rot=arr.slice(1),mid=1,res=[];
+  for(let r=0;r<n-1;r++){const circle=[arr[0],...rot];for(let i=0;i<half;i++){const a=circle[i],b=circle[n-1-i];if(a&&b)res.push({id:mid++,round:r+1,p1:a.id,p2:b.id,s1:'',s2:'',done:false});}rot=[rot[rot.length-1],...rot.slice(0,-1)];}
+  return res;
+}
+
+// ─── INIT ─────────────────────────────────────────
+const saved=sessionStorage.getItem('pool_user');
+if(saved){currentUser=JSON.parse(saved);showApp();}
+</script>
+</body>
+</html>
