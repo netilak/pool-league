@@ -139,6 +139,9 @@ body{font-family:system-ui,-apple-system,sans-serif;background:#f5f5f5;color:#1a
 .mode-opt.selected{border:2px solid #1a1a1a;background:#fafafa}
 .mode-label{font-size:14px;font-weight:500}
 .mode-desc{font-size:11px;color:#888;margin-top:3px}
+.bestof-btn{padding:7px 16px;border-radius:8px;border:1px solid #ddd;background:#fff;color:#888;font-size:13px;cursor:pointer;font-family:inherit;font-weight:500}
+.bestof-btn:hover{border-color:#aaa;color:#1a1a1a}
+.bestof-btn.active{border:2px solid #1a1a1a;color:#1a1a1a;background:#f9f9f9}
 .team-row{background:#f9f9f9;border:1px solid #e5e5e5;border-radius:10px;padding:10px 12px;margin-bottom:8px}
 .team-header{display:flex;align-items:center;gap:8px;margin-bottom:8px}
 .team-color-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
@@ -227,6 +230,12 @@ select{padding:6px 10px;border:1px solid #ddd;border-radius:8px;font-size:13px;f
           <div id="step-mode">
             <div class="field-label">ชื่อ season</div>
             <div class="field-row" style="margin-bottom:14px"><input type="text" id="newSeasonName" placeholder="Season 1, Q1 2025..."/></div>
+            <div class="field-label" style="margin-bottom:6px">จำนวนเฟรม (Best of)</div>
+            <div style="display:flex;gap:8px;margin-bottom:14px">
+              <button class="bestof-btn active" id="bo-3" onclick="pickBestOf(3)">Best of 3</button>
+              <button class="bestof-btn" id="bo-5" onclick="pickBestOf(5)">Best of 5</button>
+              <button class="bestof-btn" id="bo-7" onclick="pickBestOf(7)">Best of 7</button>
+            </div>
             <div class="field-label">รูปแบบการแข่งขัน</div>
             <div class="mode-picker">
               <div class="mode-opt selected" id="opt-solo" onclick="pickMode('solo')">
@@ -275,6 +284,7 @@ select{padding:6px 10px;border:1px solid #ddd;border-radius:8px;font-size:13px;f
         <div style="flex:1;font-size:17px;font-weight:600" id="seasonTitle"></div>
         <span class="badge" id="modeBadge"></span>
         <span class="badge" id="statusBadge"></span>
+        <span class="badge" style="background:#f0f0f0;color:#555" id="boBadge"></span>
       </div>
       <div class="tabs">
         <button class="tab active" onclick="goTab('roster')">ผู้เล่น</button>
@@ -337,6 +347,7 @@ const TFGC=['#0C447C','#085041','#712B13','#72243E','#3C3489','#633806','#27500A
 const TDOT=['#378ADD','#1D9E75','#D85A30','#D4537E','#7F77DD','#BA7517','#639922','#888780'];
 
 let currentUser=null,seasons=[],currentSid=null,nid=1;
+let newBestOf=3;
 let newPlayers=[],ntid=1,newTeams=[],ntTeamId=1,newMode='solo';
 
 // ─── AUTH ─────────────────────────────────────────
@@ -465,9 +476,13 @@ function renderLobby(){
 }
 
 // ─── NEW SEASON ───────────────────────────────────
-function openNewModal(){if(!isAdmin())return;newPlayers=[];ntid=1;newTeams=[];ntTeamId=1;newMode='solo';document.getElementById('newSeasonName').value='Season '+(seasons.length+1);document.getElementById('newPInput').value='';document.getElementById('step-mode').style.display='block';document.getElementById('step-players').style.display='none';pickMode('solo');showView('view-new');}
+function openNewModal(){if(!isAdmin())return;newPlayers=[];ntid=1;newTeams=[];ntTeamId=1;newMode='solo';newBestOf=3;document.getElementById('newSeasonName').value='Season '+(seasons.length+1);document.getElementById('newPInput').value='';document.getElementById('step-mode').style.display='block';document.getElementById('step-players').style.display='none';pickMode('solo');pickBestOf(3);showView('view-new');}
 function closeModal(){showView('view-lobby');}
 function pickMode(m){newMode=m;document.getElementById('opt-solo').className='mode-opt'+(m==='solo'?' selected':'');document.getElementById('opt-team').className='mode-opt'+(m==='team'?' selected':'');}
+function pickBestOf(n){
+  newBestOf=n;
+  [3,5,7].forEach(x=>{document.getElementById('bo-'+x).className='bestof-btn'+(x===n?' active':'');});
+}
 function goStep2(){document.getElementById('step-mode').style.display='none';document.getElementById('step-players').style.display='block';renderNewPList();renderTeamBuilder();}
 function backToStep1(){document.getElementById('step-mode').style.display='block';document.getElementById('step-players').style.display='none';}
 function addNewP(){const inp=document.getElementById('newPInput');const nm=inp.value.trim();if(!nm||newPlayers.find(p=>p.name.toLowerCase()===nm.toLowerCase()))return inp.value='';newPlayers.push({id:ntid++,name:nm});inp.value='';renderNewPList();renderTeamBuilder();}
@@ -511,7 +526,7 @@ async function createSeason(){
     teams=newTeams.map((t,ti)=>({id:ti+1,name:t.name,colorIdx:ti,members:t.members.map(mid=>{const p=newPlayers.find(x=>x.id===mid);return p?p.name:'';}).filter(Boolean)}));
     players=teams.map((t,i)=>({id:i+1,name:t.name,isTeam:true,members:t.members,colorIdx:i}));
   }else{players=newPlayers.map((p,i)=>({id:i+1,name:p.name}));}
-  seasons.push({id:nid++,name:nm,mode:newMode,players,teams,matches:genMatches(players),ended:false});
+  seasons.push({id:nid++,name:nm,mode:newMode,bestOf:newBestOf,players,teams,matches:genMatches(players),ended:false});
   await saveData();closeModal();openSeason(seasons[seasons.length-1].id);
 }
 
@@ -524,6 +539,7 @@ function openSeason(sid){
   document.getElementById('modeBadge').className='badge '+(s.mode==='team'?'mode-team':'mode-solo');
   document.getElementById('statusBadge').textContent=s.ended?'จบแล้ว':'กำลังแข่ง';
   document.getElementById('statusBadge').className='badge '+(s.ended?'b-ended':'b-active');
+  document.getElementById('boBadge').textContent='Best of '+(s.bestOf||3);
   document.getElementById('genRow').style.display=s.matches.length||s.ended||!isAdmin()?'none':'flex';
   document.getElementById('endBar').style.display=!s.ended&&s.matches.length&&isAdmin()?'flex':'none';
   goTab('roster');renderRoster();renderSchedule();renderStandings();renderMatrix();
@@ -596,7 +612,17 @@ async function confirmMatch(id){
   const s=cs();if(!s||!isAdmin())return;
   const m=s.matches.find(x=>x.id===id);if(!m)return;
   if(m.s1===''&&m.s2==='')return alert('กรุณากรอกสกอร์');
-  m.s1=parseInt(m.s1)||0;m.s2=parseInt(m.s2)||0;m.done=true;
+  const s1=parseInt(m.s1)||0,s2=parseInt(m.s2)||0;
+  const bo=s.bestOf||3;
+  const need=Math.ceil(bo/2); // จำนวนเฟรมที่ต้องชนะ เช่น Bo3=2, Bo5=3
+  const maxScore=need;
+  // validate: ผู้ชนะต้องได้ exactly need เฟรม และผู้แพ้ได้ไม่เกิน need-1
+  if(s1!==s2){ // ไม่เสมอ
+    const winner=Math.max(s1,s2),loser=Math.min(s1,s2);
+    if(winner!==need){return alert(`Best of ${bo}: ผู้ชนะต้องได้ ${need} เฟรมพอดี (กรอก ${winner})`); }
+    if(loser>=need){return alert(`Best of ${bo}: ผู้แพ้ต้องได้ไม่เกิน ${need-1} เฟรม (กรอก ${loser})`); }
+  }
+  m.s1=s1;m.s2=s2;m.done=true;
   await saveData();renderSchedule();renderStandings();renderMatrix();renderRoster();
 }
 function calcStats(s){
