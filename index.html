@@ -588,7 +588,11 @@ function renderSchedule(){
   if(fSt==='pending')vis=vis.filter(m=>!m.done);
   if(fSt==='done')vis=vis.filter(m=>m.done);
   const done=s.matches.filter(m=>m.done).length;
-  document.getElementById('schedChips').innerHTML=`<div class="info-chip">ทั้งหมด <b>${s.matches.length}</b></div><div class="info-chip">เสร็จ <b>${done}</b></div><div class="info-chip">รอ <b>${s.matches.length-done}</b></div><div class="info-chip">แสดง <b>${vis.length}</b></div>`;
+  const n=s.players.length;
+  const totalSlots=n*(n-1);
+  const doneSlots=done*2;
+  const pendSlots=(s.matches.length-done)*2;
+  document.getElementById('schedChips').innerHTML=`<div class="info-chip">ทั้งหมด <b>${totalSlots}</b></div><div class="info-chip">เสร็จ <b>${doneSlots}</b></div><div class="info-chip">รอ <b>${pendSlots}</b></div><div class="info-chip">แสดง <b>${vis.length}</b></div>`;
   if(!vis.length){document.getElementById('matchList').innerHTML='<div class="empty">ไม่มีแมตช์</div>';return;}
   document.getElementById('matchList').innerHTML=vis.map(m=>{
     const p1=s.players.find(p=>p.id===m.p1),p2=s.players.find(p=>p.id===m.p2);if(!p1||!p2)return'';
@@ -639,7 +643,10 @@ function calcStats(s){
 function renderStandings(){
   const s=cs();if(!s)return;
   const sorted=calcStats(s);const done=s.matches.filter(m=>m.done).length;
-  document.getElementById('standChips').innerHTML=`<div class="info-chip">${s.mode==='team'?'ทีม':'เดี่ยว'} · Round Robin</div><div class="info-chip">แมตช์เสร็จ <b>${done}/${s.matches.length}</b></div>`;
+  const np=s.players.length;
+  const totalSl=np*(np-1);
+  const doneSl=done*2;
+  document.getElementById('standChips').innerHTML=`<div class="info-chip">${s.mode==='team'?'ทีม':'เดี่ยว'} · Round Robin</div><div class="info-chip">แมตช์จบแล้ว <b>${doneSl}/${totalSl}</b></div>`;
   document.getElementById('standTable').innerHTML=`<table class="tbl"><thead><tr><th class="c">#</th><th>${s.mode==='team'?'ทีม':'ชื่อ'}</th><th class="c">P</th><th class="c">W</th><th class="c">L</th><th class="c">GW</th><th class="c">GL</th><th class="c">GD</th><th class="c">Pts</th></tr></thead><tbody>${sorted.map((st,i)=>{const rk=i===0?'rk1':i===1?'rk2':i===2?'rk3':'rkn';const gd=st.gf-st.ga;return`<tr><td class="c"><span class="rk ${rk}">${i+1}</span></td><td><div style="display:flex;align-items:center;gap:8px">${st.avHtml}<div><div style="font-weight:600">${st.name}</div>${st.p.isTeam?`<div style="font-size:10px;color:#888">${st.p.members.join(', ')}</div>`:''}</div></div></td><td class="c">${st.played}</td><td class="c win-c" style="font-weight:600">${st.w}</td><td class="c lose-c">${st.l}</td><td class="c">${st.gf}</td><td class="c">${st.ga}</td><td class="c" style="color:${gd>=0?'#3b6d11':'#a32d2d'}">${gd>0?'+':''}${gd}</td><td class="c" style="font-weight:700;font-size:16px;color:#0c447c">${st.pts}</td></tr>`;}).join('')}</tbody></table>`;
 }
 function renderStats(){
@@ -664,7 +671,8 @@ function renderStats(){
 function renderMatrix(){
   const s=cs();if(!s||!s.players.length){document.getElementById('matrixContent').innerHTML='<div class="empty">ยังไม่มีข้อมูล</div>';return;}
   const res={};s.matches.filter(m=>m.done).forEach(m=>{res[`${m.p1}_${m.p2}`]={s1:parseInt(m.s1)||0,s2:parseInt(m.s2)||0};res[`${m.p2}_${m.p1}`]={s1:parseInt(m.s2)||0,s2:parseInt(m.s1)||0};});
-  document.getElementById('matrixContent').innerHTML=`<table class="mx"><thead><tr><th></th>${s.players.map(p=>`<th>${p.name}</th>`).join('')}</tr></thead><tbody>${s.players.map((p1,i)=>{const bg=p1.isTeam?TBGC[i%8]:AVBG[i%9];const fg=p1.isTeam?TFGC[i%8]:AVFG[i%9];return`<tr><td style="font-weight:500;white-space:nowrap"><div style="display:flex;align-items:center;gap:5px"><div class="av" style="width:20px;height:20px;font-size:8px;background:${bg};color:${fg}">${ci(p1.name)}</div>${p1.name}</div></td>${s.players.map(p2=>{if(p1.id===p2.id)return`<td class="mc-s">—</td>`;const r=res[`${p1.id}_${p2.id}`];if(!r)return`<td style="color:#aaa">-</td>`;const cls=r.s1>r.s2?'mc-w':r.s1<r.s2?'mc-l':'mc-d';return`<td class="${cls}">${r.s1}:${r.s2}</td>`;}).join('')}</tr>`;}).join('')}</tbody></table>`;
+  const displayName=p=>p.isTeam&&p.members&&p.members.length?p.members.join(', '):p.name;
+  document.getElementById('matrixContent').innerHTML=`<table class="mx"><thead><tr><th></th>${s.players.map(p=>`<th style="font-size:11px">${displayName(p)}</th>`).join('')}</tr></thead><tbody>${s.players.map((p1,i)=>{const bg=p1.isTeam?TBGC[i%8]:AVBG[i%9];const fg=p1.isTeam?TFGC[i%8]:AVFG[i%9];return`<tr><td style="font-weight:500;white-space:nowrap"><div style="display:flex;align-items:center;gap:5px"><div class="av" style="width:20px;height:20px;font-size:8px;background:${bg};color:${fg}">${ci(p1.name)}</div><span style="font-size:12px">${displayName(p1)}</span></div></td>${s.players.map(p2=>{if(p1.id===p2.id)return`<td class="mc-s">—</td>`;const r=res[`${p1.id}_${p2.id}`];if(!r)return`<td style="color:#aaa">-</td>`;const cls=r.s1>r.s2?'mc-w':r.s1<r.s2?'mc-l':'mc-d';return`<td class="${cls}">${r.s1}:${r.s2}</td>`;}).join('')}</tr>`;}).join('')}</tbody></table>`;
 }
 
 // ─── HELPERS ─────────────────────────────────────
